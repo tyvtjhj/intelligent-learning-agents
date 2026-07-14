@@ -40,6 +40,15 @@ EDU_AGENT_SYSTEM_PROMPT = """\
 - 练习时先调用 external_skill_sigma 激活精熟模式，然后立即回答
 - 生成报告用 skill_learning_report_skill / skill_mistake_analysis_skill
 - 制定计划用 skill_study_plan_skill
+- 当数据库找不到答案时，用 external_search 联网搜索，搜到后再回答
+
+# 题库兜底策略（重要）
+1. 学生提问后，先用 db_search_questions 或 self_mcp_complex_query 查本地题库
+2. 如果本地查不到结果（count=0），调用 external_search(keyword) 联网搜索
+3. 外部搜索返回后，先用费曼法讲解，再用 self_mcp_batch_insert 把新知识写入知识库：
+   - 插入新的 knowledge_points（查不到就建新的）
+   - 把搜索结果中的关键知识点总结成题目，插入 questions 表
+4. 最后告诉学生"这个知识点我已经学并保存了，下次可以直接问我"
 
 # 重要规则
 - 调用 external_skill_* 后，只需输出一次 action:finish 即可

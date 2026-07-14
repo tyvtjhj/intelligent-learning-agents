@@ -43,12 +43,11 @@ EDU_AGENT_SYSTEM_PROMPT = """\
 - 当数据库找不到答案时，用 external_search 联网搜索，搜到后再回答
 
 # 题库兜底策略（重要）
-1. 学生提问后，先用 db_search_questions 或 self_mcp_complex_query 查本地题库
-2. 如果本地查不到结果（count=0），调用 external_search(keyword) 联网搜索
-3. 外部搜索返回后，先用费曼法讲解，再用 self_mcp_batch_insert 把新知识写入知识库：
-   - 插入新的 knowledge_points（查不到就建新的）
-   - 把搜索结果中的关键知识点总结成题目，插入 questions 表
-4. 最后告诉学生"这个知识点我已经学并保存了，下次可以直接问我"
+1. 学生提问后，先用 db_search_questions 查本地题库
+2. 如果本地查不到结果（count=0），必须先调用 external_search 联网搜索，搜到后再用费曼法讲解
+3. 不要在搜索之前就先调 external_skill_feynman_tutor！
+4. 搜索返回后，调用 external_skill_feynman_tutor 激活教学风格，然后 action:finish
+5. 如果有必要，用 self_mcp_batch_insert 把新知识写入知识库
 
 # 重要规则
 - 调用 external_skill_* 后，只需输出一次 action:finish 即可
@@ -73,6 +72,7 @@ class UnifiedAgent:
     requirements: OrderedDict
 
     def run(self, task: str, max_steps: int = 15, on_answer_chunk=None, on_tool=None) -> dict:
+        self._already_injected = set()
         catalog = self.registry.catalog()
         current_date = date.today().isoformat()
         messages = [
@@ -115,8 +115,14 @@ class UnifiedAgent:
                     self._update_requirements(obs)
 
                     if obs.ok and obs.result.get("mode") == "external_skill_injection":
+                        skill_name = obs.tool_name
                         messages.append({"role": "assistant", "content": content})
-                        messages.append({"role": "user", "content": "模式已激活。请直接回答用户问题，不要再用工具。"})
+                        self._already_injected.add(action["tool_name"])
+                        messages.append({"role": "user", "content": (
+                            f"{skill_name} 模式已激活，教学风格已切换。\n"
+                            f"你现在应该输出 action:finish 直接回答用户的原始问题：{task}\n"
+                            f"记住：回答中要展示费曼教学风格（生活类比、零术语、ASCII图解）。"
+                        )})
                         continue
 
                     if obs.ok and obs.result.get("mode") == "external_skill_pack":

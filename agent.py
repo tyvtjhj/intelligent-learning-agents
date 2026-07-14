@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from config import API_KEY, BASE_URL, MODEL_NAME
 from core.tool_registry import ToolRegistry
 from core.agent import UnifiedAgent
+from core.memory import Memory
 from core.adapters.skill_adapter import SkillAdapter
 from core.adapters.mcp_adapter import MCPAdapter
 from tools.local_tools import register_all_local_tools
@@ -70,11 +71,12 @@ def main():
     ])
 
     agent = UnifiedAgent(client, MODEL_NAME, registry, requirements)
+    memory = Memory()
 
     print("=" * 60)
     print(f"  小宋·教育督学 Agent (EduSupervisor) v1.0")
     print(f"  模型: {MODEL_NAME} | 工具: {registry.count()} 个")
-    print("  输入 'quit' 退出 | 'status' 验收进度")
+    print("  输入 'quit' 退出 | 'status' 验收进度 | 'clear' 清除上下文")
     print("=" * 60)
 
     try:
@@ -87,6 +89,10 @@ def main():
             if task.lower() == "status":
                 print(agent._requirements_status())
                 continue
+            if task.lower() == "clear":
+                memory = Memory()
+                print("✅ 对话上下文已清除")
+                continue
 
             def on_answer(text):
                 print(text, end="", flush=True)
@@ -97,12 +103,15 @@ def main():
                 if reason:
                     print(f": {reason}", end="", flush=True)
 
-            result = agent.run(task, on_answer_chunk=on_answer, on_tool=on_tool)
+            result = agent.run(task, on_answer_chunk=on_answer, on_tool=on_tool, history=memory.messages)
             if not any(result["requirements"].values()):
                 print()
             done = sum(1 for v in result["requirements"].values() if v)
             total = len(result["requirements"])
             print(f"\n[{result['steps']}步 | 验收: {done}/{total}]")
+
+            memory.add_user(task)
+            memory.add_assistant(result.get("answer", ""))
     except KeyboardInterrupt:
         print("\n再见!")
     finally:

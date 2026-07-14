@@ -36,9 +36,15 @@
 
 调用时 `csv_path` 填相对于项目根目录的路径即可。
 
+## 自动学科归类
+**subject_id 现在是可选的**：不传则根据每条题目的知识点名称自动匹配学科。
+- "加法基础" → 小学数学, "唐诗" → 初中语文, "化学式" → 初中化学, "天文常识" → 通用知识
+- 返回结果包含 `subjects_distribution` 显示各学科分布
+- 如传 subject_id 则所有题目统一归入指定学科
+
 ## 输入参数
 | 参数名 | 类型 | 必填 | 说明 |
 |--------|------|------|------|
 | csv_path | string | 是 | CSV 文件路径（如 `imports/mistakes/cuoti1.csv`） |
-| subject_id | integer | 是 | 目标学科 ID（先用 db_list_subjects 获取） |
+| subject_id | integer | 否 | 目标学科 ID（不传=自动分类，传了=统一归入） |
 | dry_run | boolean | 否 | 仅校验不写入(默认false) |

@@ -112,3 +112,14 @@ CREATE TABLE IF NOT EXISTS conversation_messages (
 );
 
 CREATE INDEX IF NOT EXISTS idx_conv_session ON conversation_messages(session_id, seq);
+
+CREATE TABLE IF NOT EXISTS general_knowledge (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT DEFAULT '',
+    category TEXT DEFAULT '通用',
+    tags TEXT DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_gk_category ON general_knowledge(category);

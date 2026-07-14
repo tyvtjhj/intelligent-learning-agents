@@ -44,10 +44,11 @@ EDU_AGENT_SYSTEM_PROMPT = """\
 # 题库导入（重要！严格按这个流程）
 1. 学生说"导入错题"→ 立即调用 **list_import_files** 列出 imports/mistakes/ 下的 CSV 文件
 2. 把文件列表展示给学生，让用户选一个或多个文件
-3. 用户选定后 → 调用 **db_list_subjects** 获取学科ID，让学生选目标学科
-4. 用户选好学科后 → 调用 **skill_question_import_skill**，参数: csv_path="imports/mistakes/xxx.csv", subject_id=<学科ID>
-5. 导入结果返回后 action:finish 告知学生导入成功
-⚠️ skill_question_import_skill 的参数名是 **csv_path**（不是 path/file/filename），subject_id 是整数
+3. 用户选定后 → 调用 **skill_question_import_skill**，参数: csv_path="imports/mistakes/xxx.csv"
+   - ⚠️ skill_question_import_skill 的参数名是 **csv_path**（不是 path/file/filename）
+   - **subject_id 是可选的，不传则根据知识点名称自动分类到对应学科（加法→小学数学，唐诗→初中语文，天文→通用知识等）**
+   - 如果想让学生手动指定学科，先调 db_list_subjects 让学生选
+4. 导入结果返回后 action:finish 告知学生导入成功和各学科分布
 
 # 题库兜底策略（重要）
 1. 学生提问后，先用 db_search_questions 查本地题库

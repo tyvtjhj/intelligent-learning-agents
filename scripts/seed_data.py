@@ -27,6 +27,7 @@ subjects = [
     (10, '高中化学', '高中10-12年级化学'),
     (11, '高中生物', '高中10-12年级生物'),
     (12, '高中数学', '高中10-12年级数学'),
+    (13, '通用知识', '跨学科常识、生活百科、信息技术等'),
 ]
 for s in subjects:
     conn.execute("INSERT INTO subjects (id, name, description) VALUES (?, ?, ?)", s)

@@ -7,7 +7,7 @@ if str(project_root) not in sys.path:
 
 from core.tool_spec import ToolSpec
 from core.tool_registry import ToolRegistry
-from tools.utility_tools import calculator, get_current_time, save_text, read_text
+from tools.utility_tools import calculator, get_current_time, save_text, read_text, list_import_files
 from tools.db_tools import (
     db_list_subjects, db_list_knowledge_points, db_get_question,
     db_search_questions, db_get_mastery_score, db_get_mistake_count,
@@ -63,6 +63,16 @@ def register_all_local_tools(registry: ToolRegistry) -> None:
                 "required": ["filename"],
             },
             function=read_text,
+        ),
+        ToolSpec(
+            name="list_import_files",
+            description=(
+                "列出 imports/mistakes/ 目录下的所有 CSV 错题文件。\n"
+                "适用场景：学生说要导入错题时，先用此工具列出可选文件，让用户确认后再调用 skill_question_import_skill 导入。\n"
+                "返回 files 数组和 count。"
+            ),
+            parameters={"type": "object", "properties": {}, "required": []},
+            function=list_import_files,
         ),
         ToolSpec(
             name="db_list_subjects",

@@ -12,7 +12,6 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from core.tool_registry import ToolRegistry
-from core.memory import Memory
 from core.observation import Observation
 
 EDU_AGENT_SYSTEM_PROMPT = """\
@@ -41,6 +40,14 @@ EDU_AGENT_SYSTEM_PROMPT = """\
 - **学生要求制定学习计划（如"7天计划""复习计划"）时，必须调用 skill_study_plan_skill 生成计划，不要只查学科就提问**
 - 生成报告用 skill_learning_report_skill / skill_mistake_analysis_skill
 - 当数据库找不到答案时，用 external_search 联网搜索，搜到后再回答
+
+# 题库导入（重要！严格按这个流程）
+1. 学生说"导入错题"→ 立即调用 **list_import_files** 列出 imports/mistakes/ 下的 CSV 文件
+2. 把文件列表展示给学生，让用户选一个或多个文件
+3. 用户选定后 → 调用 **db_list_subjects** 获取学科ID，让学生选目标学科
+4. 用户选好学科后 → 调用 **skill_question_import_skill**，参数: csv_path="imports/mistakes/xxx.csv", subject_id=<学科ID>
+5. 导入结果返回后 action:finish 告知学生导入成功
+⚠️ skill_question_import_skill 的参数名是 **csv_path**（不是 path/file/filename），subject_id 是整数
 
 # 题库兜底策略（重要）
 1. 学生提问后，先用 db_search_questions 查本地题库

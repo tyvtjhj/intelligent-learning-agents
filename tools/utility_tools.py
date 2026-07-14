@@ -76,3 +76,15 @@ def read_text(filename: str) -> dict:
         return {"ok": False, "error": f"文件不存在: {filename}"}
     except Exception as e:
         return {"ok": False, "error": str(e)}
+
+
+def list_import_files() -> dict:
+    from pathlib import Path
+    project_root = Path(__file__).parent.parent
+    mistakes_dir = project_root / "imports" / "mistakes"
+    if not mistakes_dir.exists():
+        return {"ok": True, "files": [], "dir": str(mistakes_dir), "count": 0}
+    csv_files = sorted(
+        [f.name for f in mistakes_dir.glob("*.csv") if f.name != "TEMPLATE_mistakes.csv"],
+    )
+    return {"ok": True, "files": csv_files, "dir": str(mistakes_dir.relative_to(project_root)), "count": len(csv_files)}

@@ -1,6 +1,7 @@
 # 小宋·教育督学 Agent 测试指南
 
 > 使用前先运行 `python scripts/seed_data.py` 导入种子数据
+> 共 32 条测试用例，覆盖 28 个全部工具
 
 ---
 
@@ -14,214 +15,262 @@ python agent.py
 ```
 ============================================================
   小宋·教育督学 Agent (EduSupervisor) v1.0
-  模型: deepseek-v4-pro | 工具: 24 个
-  输入 'quit' 退出 | 'status' 验收进度
+  模型: deepseek-v4-pro | 工具: 28 个
+  输入 'quit' 退出 | 'status' 验收进度 | 'clear' 清除上下文
 ============================================================
 ```
 
 ---
 
-## 场景 1：自我介绍
+## 第一部分：本地 Tool 测试（🔧，14个）
 
+### #1 计算器
 ```
-> 你是谁？
+> 帮我算一下 128 × 37 + 256
 ```
+**预期触发**：🔧 `calculator` → 返回 4992
 
-**预期**：小宋自我介绍，用"我是小宋"开头，提到教育督学身份。
+### #2 当前时间
+```
+> 现在几点了
+```
+**预期触发**：🔧 `get_current_time`
 
-**覆盖知识点**：无（基础对话）
+### #3 列出学科
+```
+> 有哪些学科
+```
+**预期触发**：🔧 `db_list_subjects` → 13个学科（含通用知识）
+
+### #4 列出知识点
+```
+> 小学数学有哪些知识点
+```
+**预期触发**：🔧 `db_list_knowledge_points` → 返回学科1的知识点
+
+### #5 搜索题目
+```
+> 找一下和勾股定理有关的题
+```
+**预期触发**：🔧 `db_search_questions`
+
+### #6 单题详情
+```
+> 题目 1 的详细信息
+```
+**预期触发**：🔧 `db_get_question(question_id=1)`
+
+### #7 近期学习
+```
+> 我最近学习情况怎么样
+```
+**预期触发**：🔧 `db_get_recent_sessions`
+
+### #8 保存笔记
+```
+> 帮我把这段话存一下：今天学了分数加减法
+```
+**预期触发**：🔧 `save_text` → 写入 `workspace/learning_note_xxx.txt`
+
+### #9 读取笔记（列文件→读文件）
+```
+> 读取我保存的笔记
+```
+**预期触发**：🔧 `read_text`（不传filename）→ 列出8个文件 → 用户选文件 → `read_text(filename="xxx")` → **读取后直接展示，不查数据库**
+
+### #10 列出导入文件
+```
+> 导入错题
+```
+**预期触发**：🔧 `list_import_files` → 返回 `imports/mistakes/` 下CSV文件列表（如 `cuoti1.csv`, `cuoti2.csv`）
+
+### #11 掌握度查询
+```
+> 知识点的掌握度怎么样
+```
+**预期触发**：🔧 `db_get_mastery_score`
+
+### #12 错题数量
+```
+> 这个知识点有多少错题
+```
+**预期触发**：🔧 `db_get_mistake_count`
 
 ---
 
-## 场景 2：知识点讲解（本地Tool + 外部Skill）
+## 第二部分：自建 Skill 测试（📦，4个）
 
+### #13 错题导入
+> 承接 #10，"导入错题"返回文件列表后：
 ```
-> 帮我理解什么是绝对值
+> 第一个
 ```
+→ 用户选择 `cuoti1.csv`，Agent 调用导入
+**预期触发**：📦 `skill_question_import_skill(csv_path="imports/mistakes/cuoti1.csv")` → 自动学科归类 → 返回分布
 
-**预期**：
-- 调用 `db_list_subjects` 或直接调用 `external_skill_feynman_tutor`
-- 用生活类比讲解（如"距离"）
-- 回复口语化、有温度
+### #14 学习计划
+```
+> 帮我制定一个 7 天复习计划，小学数学
+```
+**预期触发**：📦 `skill_study_plan_skill` → `workspace/reports/study_plan_xxx.md`
 
-**验收**：`本地Tool调用` ✓，`外部Skill调用` ✓
+### #15 学习报告
+```
+> 生成一份学习报告
+```
+**预期触发**：📦 `skill_learning_report_skill` → `workspace/reports/learning_report_xxx.md`
+
+### #16 错题分析
+```
+> 分析我的错题
+```
+**预期触发**：📦 `skill_mistake_analysis_skill` → `workspace/reports/mistake_analysis_xxx.md`
 
 ---
 
-## 场景 3：查看学科列表（本地Tool）
+## 第三部分：外部 Skill 测试（📥，3个+170个Pack）
 
+### #17 费曼教学（本地命中）
 ```
-> 有哪些可以学的学科？
+> 什么是光合作用
 ```
+**预期触发**：🔧 `db_search_questions`(count>0) → 📥 `external_skill_feynman_tutor` → 费曼风格讲解（生活类比+零术语+ASCII图解）
 
-**预期**：调用 `db_list_subjects`，返回初中数学、初中物理。
+### #18 精熟练习
+```
+> 给我出几道物理题考考我
+```
+**预期触发**：📥 `external_skill_sigma` → 布鲁姆精熟法出题
 
-**验收**：`本地Tool调用` ✓
+### #19 费曼教学（本地未命中→联网→入库）
+```
+> 用三角函数公式教我
+```
+**预期触发**：🔧 `db_search_questions`(count=0) → 🌐 `external_search` → 📥 `external_skill_feynman_tutor` → 🔧 `db_save_new_knowledge`
+
+### #20 Hermes Edu 教材同步
+```
+> 用人教版数学方法教分数
+```
+**预期触发**：📥 `external_skill_hermes_edu` → 注入教材同步教学方法
 
 ---
 
-## 场景 4：查看知识点（本地Tool）
+## 第四部分：自建 MCP 测试（🔌，6个）
 
+### #21 学习统计
 ```
-> 初中数学有哪些知识点？
+> 初中物理的学习统计数据
 ```
+**预期触发**：🔌 `self_mcp_learning_stats` → 返回雷达图数据
 
-**预期**：调用 `db_list_knowledge_points`，列出有理数、一元一次方程等 7 个知识点。
+### #22 薄弱点排行
+```
+> 我最薄弱的10个知识点是哪些
+```
+**预期触发**：🔌 `self_mcp_weak_point_ranking` → Top N 排名
 
-**验收**：`本地Tool调用` ✓
+### #23 掌握度趋势
+```
+> 四则运算的掌握度变化趋势
+```
+**预期触发**：🔌 `self_mcp_mastery_trend`
+
+### #24 复杂SQL查询
+```
+> 用 SQL 查一下所有选择题
+```
+**预期触发**：🔌 `self_mcp_complex_query`
+
+### #25 批量插入
+```
+> 帮我批量插入一条练习记录
+```
+**预期触发**：🔌 `self_mcp_batch_insert`
+
+### #26 导出CSV（2步完成）
+```
+> 导出所有数学题到 CSV，还要告诉我文件位置
+```
+**预期触发**：🔌 `self_mcp_export_query(sql="SELECT...WHERE sub.name LIKE '%数学%'", fmt="csv", output="math_questions")` → `outputs/math_questions.csv` → **不逐题查，不循环**
 
 ---
 
-## 场景 5：搜索题目（本地Tool）
+## 第五部分：外部 MCP 测试（🌐，1个）
 
+### #27 联网搜索
 ```
-> 搜一下和方程有关的题目
+> 什么是量子场论
 ```
-
-**预期**：调用 `db_search_questions` 或 `self_mcp_complex_query`，返回一元一次方程相关题目。
-
-**验收**：`本地Tool调用` ✓
+**预期触发**：🔧 `db_search_questions`(count=0) → 🌐 `external_search`(3次重试) → 📥 `external_skill_feynman_tutor` → 🔧 `db_list_subjects` → 🔧 `db_save_new_knowledge`
 
 ---
 
-## 场景 6：获取具体题目（本地Tool）
+## 第六部分：组合场景（综合验收）
 
+### #28 导入+复习
 ```
-> 让我看看第 3 题的内容
+> 导入错题 → 选cuoti1.csv → 然后分析错题
 ```
+**预期触发**：🔧 `list_import_files` → 📦 `skill_question_import_skill` → 📦 `skill_mistake_analysis_skill`
 
-**预期**：调用 `db_get_question(question_id=3)`，返回"下列哪个是一元一次方程？"及选项。
-
-**验收**：`本地Tool调用` ✓
-
----
-
-## 场景 7：计算器验证（本地Tool）
-
+### #29 讲解+出题
 ```
-> 帮我算一下 (100+200)*3/5 等于多少
+> 先教我勾股定理，然后出几道题考我
 ```
+**预期触发**：🔧 `db_search_questions` → 📥 `external_skill_feynman_tutor` → 📥 `external_skill_sigma`
 
-**预期**：调用 `calculator`，返回 180。
-
-**验收**：`本地Tool调用` ✓
-
----
-
-## 场景 8：生成学习报告（自建Skill + 自建MCP）
-
+### #30 报告+计划
 ```
-> 生成学习报告
+> 生成学习报告，再帮我制定复习计划
 ```
+**预期触发**：📦 `skill_learning_report_skill` → 📦 `skill_study_plan_skill`
 
-**预期**：
-- 调用 `self_mcp_learning_stats` 获取统计数据
-- 调用 `skill_learning_report_skill` 生成报告
-- 报告生成在 `workspace/reports/` 目录下
-
-**验收**：`自建Skill调用` ✓，`自建MCP调用` ✓
-
----
-
-## 场景 9：错题分析（自建Skill + 自建MCP）
-
-```
-> 分析错题
-```
-
-**预期**：
-- 调用 `self_mcp_complex_query` 查询错题数据
-- 调用 `skill_mistake_analysis_skill` 生成分析报告
-- 报告列出薄弱知识点排名
-
-**验收**：`自建Skill调用` ✓，`自建MCP调用` ✓
-
----
-
-## 场景 10：制定学习计划（自建Skill + 自建MCP）
-
-```
-> 制定一个 7 天的学习计划
-```
-
-**预期**：
-- 调用 `self_mcp_weak_point_ranking` 获取薄弱点
-- 调用 `skill_study_plan_skill` 生成计划
-- 计划含每天要复习的知识点
-
-**验收**：`自建Skill调用` ✓，`自建MCP调用` ✓
-
----
-
-## 场景 11：综合测试（尽量多知识点）
-
-```
-> 先列出数学知识点，找出我最薄弱的地方，帮我用费曼法讲解，再生成学习计划
-```
-
-**预期**：
-- `db_list_knowledge_points`（本地Tool）
-- `self_mcp_weak_point_ranking`（自建MCP）
-- `external_skill_feynman_tutor`（外部Skill）
-- `skill_study_plan_skill`（自建Skill）
-
-**验收**：`本地Tool` ✓，`自建MCP` ✓，`外部Skill` ✓，`自建Skill` ✓
-
----
-
-## 场景 12：文件读写（本地Tool）
-
-```
-> 帮我把"今天学了一元一次方程"保存为 notes.txt
-```
-
-**预期**：调用 `save_text`，文件落盘到 `workspace/notes.txt`。
-
-```
-> 读一下 notes.txt 的内容
-```
-
-**预期**：调用 `read_text`，返回刚才保存的内容。
-
----
-
-## 场景 13：查看验收进度
-
+### #31 status 验收
 ```
 > status
 ```
-
-**预期**：显示 5 项验收条件的当前状态。
+**预期触发**：显示验收进度
 
 ```
 # 验收进度
 [✓] 本地Tool调用
 [✓] 自建Skill调用
 [✓] 外部Skill调用
-[✗] 自建MCP调用
-[✗] 外部MCP调用
+[✓] 自建MCP调用
+[✓] 外部MCP调用
 ```
+
+### #32 全部独立测试
+```
+> 帮我算 128×37 → 现在几点了 → 有哪些学科 → 小学数学有哪些知识点 → 
+  找一下和勾股定理有关的题 → 给我出几道物理题 → 什么是光合作用 → 
+  生成学习报告 → 分析错题 → 帮我制定7天复习计划 → 
+  导出所有数学题到CSV → status
+```
+**预期**：一条指令串联 12 个工具，验收全绿 ✓
 
 ---
 
-## 快速覆盖所有知识点的最小测试集
+## 快速最小覆盖（5条）
 
-按顺序执行下面 4 句，即可覆盖全部 5 大知识点（外部 MCP 除外）：
+按顺序执行下面 5 句，覆盖全部 5 大知识域：
 
 ```
 > 有哪些学科？
-> 帮我理解什么是绝对值
+> 什么是光合作用
 > 生成学习报告
-> 分析错题
+> 帮我制定一个 7 天复习计划，小学数学
+> 导出所有数学题到 CSV
 ```
 
-| 知识点 | 触发场景 | 验收 |
-|--------|---------|------|
-| 本地 Tool | 场景 2-7（db_*, calculator 等） | `db_list_subjects` 被调用 |
-| 自建 Skill | 场景 8-10（learning_report, mistake_analysis, study_plan） | 报告文件生成 |
-| 外部 Skill | 场景 2, 11（feynman/sigma/hermes） | `external_skill_*` 被调用 |
-| 自建 MCP | 场景 8-10（complex_query, learning_stats 等） | `self_mcp_*` 被调用 |
-| 外部 MCP | 外部 MCP 默认关闭，需先在 `external_mcp_config.json` 中设置 `enabled: true` | `external_mcp_*` 被调用 |
+| 知识域 | 工具数 | 验收 |
+|--------|--------|------|
+| 本地 Tool | 14 | `db_list_subjects`, `db_search_questions` 被调用 |
+| 自建 Skill | 4 | `skill_learning_report_skill`, `skill_study_plan_skill` 被调用 |
+| 外部 Skill | 3 | `external_skill_feynman_tutor` 被调用 |
+| 自建 MCP | 6 | `self_mcp_export_query` 被调用 |
+| 外部 MCP | 1 | `external_search`（仅在未命中时触发） |
 
 ---
 
@@ -232,4 +281,8 @@ python agent.py
 | Agent 回答卡住不动 | API 超时或上下文过长 | Ctrl+C 重新运行 |
 | 工具未找到 | 种子数据未导入 | 运行 `python scripts/seed_data.py` |
 | 外部 Skill 加载失败 | 未安装外部仓库 | 运行 `python scripts/install_external_skills.py` |
-| 流式输出不显示 | DeepSeek 流式支持 | 等待3-5秒，无需处理 |
+| `read_text` 反复试探参数名 | 旧版 System Prompt | 确认 ToolSpec 标注 "参数名是 filename（不是 path/file）" |
+| 导出CSV 15步死循环 | Agent 不知参数名 | 确认 System Prompt 含 SQL 示例+参数名 sql/fmt/output |
+| 读取笔记后额外查数据库 | Agent 误触兜底策略 | 确认 ToolSpec 标注 "读取笔记后直接展示，不查DB" |
+| 本地命中知识点仍重复入库 | System Prompt 条件分支不明确 | 确认分支A规则 "count>0 → 不调 db_save_new_knowledge" |
+| 子进程 GBK 编码报错 | Windows 默认编码 | 确认 `skill_adapter.py` 中 `encoding="utf-8"` + `PYTHONIOENCODING="utf-8"` |

@@ -1,6 +1,6 @@
 # 小宋·教育督学 Agent (EduSupervisor) — 功能总览
 
-> 模型: DeepSeek-v4-pro | 工具总数: 27 个 | 数据库: EduSupervisor.db (13 表)
+> 模型: DeepSeek-v4-pro | 工具总数: 28 个 | 数据库: EduSupervisor.db (13 表)
 
 ---
 
@@ -36,7 +36,7 @@
 | `calculator` | 安全计算器 | 支持 +-\*/%** 运算，基于 AST 解析 |
 | `get_current_time` | 获取当前时间 | 返回日期、时间、时区、星期 |
 | `save_text` | 保存文本 | 将文本写入 workspace/ 目录 |
-| `read_text` | 读取文本 | 从 workspace/ 目录读取文件 |
+| `read_text` | 读取文本/列文件 | 不传filename→列出workspace/下文件；传filename→读文件内容 |
 | `list_import_files` | 列出导入文件 | 列出 imports/mistakes/ 下 CSV 错题文件 |
 | `db_list_subjects` | 列出学科 | 返回 13 个学科（小学→高中+通用知识） |
 | `db_list_knowledge_points` | 列出知识点 | 按学科 ID 查知识点（含层级结构） |
@@ -84,7 +84,7 @@
 |------|--------|------|
 | 复杂 SQL 查询 | `self_mcp_complex_query` | 参数化安全 SQL 查询（读白名单表） |
 | 批量插入 | `self_mcp_batch_insert` | 批量 INSERT 数据到练习/错题/掌握度表 |
-| 导出查询结果 | `self_mcp_export_query` | 导出 SELECT 结果为 JSON/CSV |
+| 导出查询结果 | `self_mcp_export_query` | 导出 SELECT 结果为 JSON/CSV，fmt="csv" 时写入 outputs/ 目录 |
 | 学习统计 | `self_mcp_learning_stats` | 按学科查掌握度分布，返回雷达图数据 |
 | 薄弱点排行 | `self_mcp_weak_point_ranking` | 按学科排名，薄弱知识点 Top N |
 | 掌握度趋势 | `self_mcp_mastery_trend` | 按知识点查掌握度历史趋势 |
@@ -116,7 +116,7 @@
 | 6 | `题目 1 的详细信息` | 🔧 `db_get_question` |
 | 7 | `我最近学习情况怎么样` | 🔧 `db_get_recent_sessions` |
 | 8 | `帮我把这段话存一下：今天学了分数加减法` | 🔧 `save_text` |
-| 9 | `读取我保存的笔记` | 🔧 `read_text`（参数名是 filename） → 直接展示内容，不查数据库 |
+| 9 | `读取我保存的笔记` | 🔧 `read_text`（不传filename）→ 列出workspace文件 → 用户选 → `read_text(filename="xxx")` → 直接展示，不查DB |
 | 10 | `导入错题` | 🔧 `list_import_files` → 显示 CSV 文件列表 |
 | 11 | `知识点的掌握度怎么样` | 🔧 `db_get_mastery_score` |
 | 12 | `这个知识点有多少错题` | 🔧 `db_get_mistake_count` |
@@ -147,20 +147,21 @@
 | 26 | `我最薄弱的10个知识点是哪些` | 🔌 `self_mcp_weak_point_ranking` |
 | 27 | `四则运算的掌握度变化趋势` | 🔌 `self_mcp_mastery_trend` |
 | 28 | `用 SQL 查一下所有选择题` | 🔌 `self_mcp_complex_query` |
-| 29 | `导出所有数学题到 CSV，还要告诉我文件位置` | 🔌 `self_mcp_export_query`(fmt="csv", output="math_questions") → "文件已导出到 outputs/math_questions.csv" |
+| 29 | `帮我批量插入一条练习记录` | 🔌 `self_mcp_batch_insert` |
+| 30 | `导出所有数学题到 CSV，还要告诉我文件位置` | 🔌 `self_mcp_export_query`(fmt="csv", output="math_questions") → "文件已导出到 outputs/math_questions.csv" |
 
 ### 第五部分：外部 MCP 测试（🌐）
 
 | # | 测试语句 | 预期触发 |
 |---|---------|---------|
-| 30 | `什么是量子场论` | 🔧 `db_search_questions`(count=0) → 🌐 `external_search` → 📥 `external_skill_feynman_tutor` → 🔧 `db_save_new_knowledge` |
+| 31 | `什么是量子场论` | 🔧 `db_search_questions`(count=0) → 🌐 `external_search` → 📥 `external_skill_feynman_tutor` → 🔧 `db_save_new_knowledge` |
 
 ### 第六部分：组合场景（综合验收）
 
 | # | 测试语句 | 预期触发 |
 |---|---------|---------|
-| 31 | `导入错题` → 选文件 → 选学科 | 🔧 `list_import_files` → 📦 `skill_question_import_skill` → 返回各学科分布 |
-| 32 | `status` | 验收进度：应显示 ✓ 本地Tool ✓ 自建Skill ✓ 外部Skill ✓ 自建MCP ✓ 外部MCP |
+| 32 | `导入错题` → 选文件 → 选学科 | 🔧 `list_import_files` → 📦 `skill_question_import_skill` → 返回各学科分布 |
+| 33 | `status` | 验收进度：应显示 ✓ 本地Tool ✓ 自建Skill ✓ 外部Skill ✓ 自建MCP ✓ 外部MCP |
 
 ---
 
@@ -174,12 +175,12 @@ agent.py 启动
   └─ MCPAdapter.start_all()       → 6 个 🔌 自建 MCP + 0 个 🌐 外部 MCP (disabled)
                                     + 1 个 external_search (自建 Python 子进程)
 ─────────────────────────────────────────────────
-  合计: 27 个工具
+│  合计: 28 个工具
 ```
 
 ## 五、验收标准
 
-启动后输入 `status` 查看验收进度，所有 27 个工具必须被成功调用才算全部通过：
+启动后输入 `status` 查看验收进度，所有 28 个工具必须被成功调用才算全部通过：
 
 ```
 [✓] 本地Tool调用

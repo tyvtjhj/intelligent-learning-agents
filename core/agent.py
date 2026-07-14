@@ -26,18 +26,25 @@ EDU_AGENT_SYSTEM_PROMPT = """\
 4. **分析错题**: 找出薄弱知识点，分析错误原因
 5. **生成报告**: 生成学习报告和个性化学习计划
 
+# 费曼教学法（讲解时默认使用）
+1. 先说生活类比和画面，再回到术语
+2. 零术语裸奔：英文缩写首次出现必须给全称+翻译+大白话
+3. 用 ASCII 图把复杂机制画出来
+4. 默认零基础起步，但稍微超前一点点
+5. 最后给 3-4 个深钻方向
+
 # 工作原则
 - 先查数据库了解情况，再给出建议
 - 简单查询用 db_* 工具，复杂查询用 self_mcp_complex_query
-- 教学用 external_skill_feynman_tutor
-- 练习用 external_skill_sigma
+- 讲解知识时先调用 external_skill_feynman_tutor 激活费曼模式，然后立即回答
+- 练习时先调用 external_skill_sigma 激活精熟模式，然后立即回答
 - 生成报告用 skill_learning_report_skill / skill_mistake_analysis_skill
 - 制定计划用 skill_study_plan_skill
 
-# 外部 Skill 重要说明
-external_skill_feynman_tutor 和 external_skill_sigma 是"人格注入"工具：
-调用它们后，工具会返回教学指令文本，你需要立即用 action:finish 直接回答用户问题。
-不要在收到注入文本后再调用任何工具！
+# 重要规则
+- 调用 external_skill_* 后，只需输出一次 action:finish 即可
+- 不要在 action:finish 之后再调用任何工具
+- 回答要口语化、有温度，像真人老师
 
 # 输出格式
 你只能输出 JSON:
@@ -96,15 +103,23 @@ class UnifiedAgent:
                     self._update_requirements(obs)
 
                     if obs.ok and obs.result.get("mode") == "external_skill_injection":
-                        skill_content = obs.result.get("skill_content", "")[:3000]
                         messages.append({"role": "assistant", "content": content})
-                        messages.append({"role": "system", "content": f"已注入以下教学指令，请直接回答用户原始问题:\n\n{skill_content}"})
-                        messages.append({"role": "user", "content": f"现在请用上述教学风格直接回答我的问题:\n\n{task}"})
+                        messages.append({"role": "user", "content": "模式已激活。请直接回答用户问题，不要再用工具。"})
                         continue
 
                     if obs.ok and obs.result.get("mode") == "external_skill_pack":
                         messages.append({"role": "assistant", "content": content})
-                        messages.append({"role": "user", "content": "已获取 Skill Pack 目录，请直接回答用户问题"})
+                        messages.append({"role": "user", "content": "请直接回答用户问题。"})
+                        continue
+
+                    if obs.ok and action["tool_name"].startswith("skill_"):
+                        result_str = json.dumps(obs.result, ensure_ascii=False)[:2000]
+                        messages.append({"role": "assistant", "content": content})
+                        messages.append({"role": "user", "content": (
+                            f"Skill 执行结果: {result_str}\n\n"
+                            "不要再用 read_text 去读文件。直接 action:finish，"
+                            "把结果中的内容用自然语言讲给学生。"
+                        )})
                         continue
 
                     if obs.ok:
@@ -132,7 +147,7 @@ class UnifiedAgent:
             model=self.model_name,
             messages=messages,
             temperature=0.3,
-            max_tokens=1024,
+            max_tokens=2048,
             stream=True,
         )
         for chunk in stream:

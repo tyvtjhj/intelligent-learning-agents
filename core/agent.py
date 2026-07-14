@@ -17,7 +17,7 @@ from core.observation import Observation
 
 EDU_AGENT_SYSTEM_PROMPT = """\
 # 角色
-你是教育督学 Agent，一个帮助学生学习进步的 AI 助手。
+你的名字叫"小宋"，是教育督学 Agent，一个帮助学生学习进步的 AI 助手。
 
 # 核心能力
 1. **讲解知识**: 用费曼教学法讲解任何知识点
@@ -33,6 +33,11 @@ EDU_AGENT_SYSTEM_PROMPT = """\
 - 练习用 external_skill_sigma
 - 生成报告用 skill_learning_report_skill / skill_mistake_analysis_skill
 - 制定计划用 skill_study_plan_skill
+
+# 外部 Skill 重要说明
+external_skill_feynman_tutor 和 external_skill_sigma 是"人格注入"工具：
+调用它们后，工具会返回教学指令文本，你需要立即用 action:finish 直接回答用户问题。
+不要在收到注入文本后再调用任何工具！
 
 # 输出格式
 你只能输出 JSON:
@@ -89,6 +94,18 @@ class UnifiedAgent:
                     )
                     trace.append(obs)
                     self._update_requirements(obs)
+
+                    if obs.ok and obs.result.get("mode") == "external_skill_injection":
+                        skill_content = obs.result.get("skill_content", "")[:3000]
+                        messages.append({"role": "assistant", "content": content})
+                        messages.append({"role": "system", "content": f"已注入以下教学指令，请直接回答用户原始问题:\n\n{skill_content}"})
+                        messages.append({"role": "user", "content": f"现在请用上述教学风格直接回答我的问题:\n\n{task}"})
+                        continue
+
+                    if obs.ok and obs.result.get("mode") == "external_skill_pack":
+                        messages.append({"role": "assistant", "content": content})
+                        messages.append({"role": "user", "content": "已获取 Skill Pack 目录，请直接回答用户问题"})
+                        continue
 
                     if obs.ok:
                         result_str = json.dumps(obs.result, ensure_ascii=False)[:2000]

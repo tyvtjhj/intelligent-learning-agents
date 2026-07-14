@@ -57,7 +57,7 @@ def main():
     agent = UnifiedAgent(client, MODEL_NAME, registry, requirements)
 
     print("=" * 60)
-    print(f"  教育督学 Agent (EduSupervisor) v1.0")
+    print(f"  小宋·教育督学 Agent (EduSupervisor) v1.0")
     print(f"  模型: {MODEL_NAME} | 工具: {registry.count()} 个")
     print("  输入 'quit' 退出 | 'status' 验收进度")
     print("=" * 60)

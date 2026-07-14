@@ -1,0 +1,18 @@
+{
+  "servers": [
+    {
+      "name": "math_js",
+      "description": "数学计算 MCP Server — 提供高级数学运算、单位换算等功能",
+      "origin": "node",
+      "enabled": false,
+      "install_cmd": "npx -y @anthropic/mcp-server-math"
+    },
+    {
+      "name": "brave_search",
+      "description": "Web Search MCP Server — 联网搜索最新教育和学习资源",
+      "origin": "node",
+      "enabled": false,
+      "install_cmd": "npx -y @anthropic/mcp-server-brave-search"
+    }
+  ]
+}

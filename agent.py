@@ -14,6 +14,21 @@ from tools.local_tools import register_all_local_tools
 from db.connection import set_db_path
 
 
+def _tool_label(name: str, source_type: str, source_name: str) -> tuple[str, str]:
+    """返回 (中文标签, emoji图标)"""
+    if source_type == "mcp":
+        if source_name.startswith("external_") or name.startswith("external_"):
+            return ("外部MCP", "🌐")
+        return ("自建MCP", "🔌")
+    if source_type == "skill":
+        if source_name.startswith("external_") or name.startswith("external_skill_"):
+            return ("外部Skill", "📥")
+        return ("自建Skill", "📦")
+    if source_type == "function":
+        return ("本地Tool", "🔧")
+    return ("未知", "❓")
+
+
 def main():
     project_root = Path(__file__).parent
     db_path = str(project_root / "EduSupervisor.db")
@@ -76,8 +91,9 @@ def main():
             def on_answer(text):
                 print(text, end="", flush=True)
 
-            def on_tool(name, reason):
-                print(f"\n  🔧 {name}", end="", flush=True)
+            def on_tool(name, reason, source_type, source_name):
+                label, icon = _tool_label(name, source_type, source_name)
+                print(f"\n  {icon} [{label}] {name}", end="", flush=True)
                 if reason:
                     print(f": {reason}", end="", flush=True)
 

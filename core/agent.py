@@ -103,8 +103,11 @@ class UnifiedAgent:
                     }
 
                 if act == "tool_call":
+                    spec = self.registry.get(action["tool_name"])
+                    source_type = spec.source_type if spec else "unknown"
+                    source_name = spec.source_name if spec else ""
                     if on_tool:
-                        on_tool(action["tool_name"], action.get("reason", ""))
+                        on_tool(action["tool_name"], action.get("reason", ""), source_type, source_name)
                     obs = self.registry.execute(
                         action["tool_name"], action.get("arguments", {})
                     )

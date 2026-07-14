@@ -65,11 +65,14 @@ class SkillAdapter:
 
         parsed = self._parse_skill_md(skill_md.read_text(encoding="utf-8"), skill_dir, runner)
 
+        import os
         def _skill_closure(**kwargs: Any) -> dict:
             workspace = self.skills_dir.parent / "workspace"
             cmd = [sys.executable, str(runner), json.dumps(kwargs), str(workspace)]
+            env = os.environ.copy()
+            env["PYTHONIOENCODING"] = "utf-8"
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, encoding="utf-8", env=env, errors="replace")
                 if result.returncode != 0:
                     return {"ok": False, "error": result.stderr.strip() or result.stdout.strip()}
                 return json.loads(result.stdout.strip())

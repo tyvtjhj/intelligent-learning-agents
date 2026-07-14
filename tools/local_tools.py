@@ -57,14 +57,15 @@ def register_all_local_tools(registry: ToolRegistry) -> None:
         ToolSpec(
             name="read_text",
             description=(
-                "从 workspace 目录读取文本文件。参数名是 filename（不是 path/file）。\n"
+                "从 workspace 目录读取或列出文本文件。参数名是 filename（不是 path/file）。\n"
+                "不传 filename → 列出 workspace 下所有文件；传 filename → 读取指定文件内容。\n"
                 "适用场景：读取之前保存的笔记、报告。\n"
                 "⚠️ 读取笔记后直接展示内容，不要再调 db_search_questions 查数据库！"
             ),
             parameters={
                 "type": "object",
-                "properties": {"filename": {"type": "string", "description": "要读取的文件名（参数名: filename）"}},
-                "required": ["filename"],
+                "properties": {"filename": {"type": "string", "description": "要读取的文件名，不填则列出所有文件"}},
+                "required": [],
             },
             function=read_text,
         ),

@@ -59,7 +59,7 @@ def save_text(filename: str, content: str) -> dict:
         return {"ok": False, "error": str(e)}
 
 
-def read_text(filename: str) -> dict:
+def read_text(filename: str = "") -> dict:
     import sys
     from pathlib import Path
     project_root = Path(__file__).parent.parent
@@ -68,6 +68,14 @@ def read_text(filename: str) -> dict:
     from core.safe_path import safe_path
 
     workspace = project_root / "workspace"
+    if not filename:
+        files = []
+        for f in workspace.rglob("*"):
+            if f.is_file():
+                rel = str(f.relative_to(workspace))
+                files.append({"name": rel, "size": f.stat().st_size})
+        files.sort(key=lambda x: x["name"])
+        return {"ok": True, "files": files, "count": len(files), "dir": str(workspace.relative_to(project_root))}
     try:
         target = safe_path(filename, workspace, write=False)
         content = target.read_text(encoding="utf-8")

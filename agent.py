@@ -106,9 +106,6 @@ def main():
             result = agent.run(task, on_answer_chunk=on_answer, on_tool=on_tool, history=memory.messages)
             if not any(result["requirements"].values()):
                 print()
-            done = sum(1 for v in result["requirements"].values() if v)
-            total = len(result["requirements"])
-            print(f"\n[{result['steps']}步 | 验收: {done}/{total}]")
 
             memory.add_user(task)
             memory.add_assistant(result.get("answer", ""))

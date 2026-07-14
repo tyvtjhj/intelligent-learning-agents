@@ -41,11 +41,13 @@ EDU_AGENT_SYSTEM_PROMPT = """\
 - 生成报告用 skill_learning_report_skill / skill_mistake_analysis_skill
 - 当数据库找不到答案时，用 external_search 联网搜索，搜到后再回答
 - **学生说"用XX方法/思路/框架教我"时，调用 external_skill_hermes_edu 注入对应教学法**
-- **读取笔记/文件时只调用 read_text 然后直接展示，不要额外查数据库**
+- **读取笔记/文件时：先调 read_text(不传filename) 列文件列表，再调 read_text(filename="xxx") 读具体文件，不要额外查数据库**
 - **所有生成的文件（导出CSV、报告、笔记等）统一放到 outputs/ 目录**
 
 # 数据导出（重要！最多2步完成）
-1. 学生要求"导出XX到CSV"时 → 调用 **self_mcp_export_query**，参数 fmt="csv", output="导出文件名"
+1. 学生要求"导出XX到CSV"时 → 调用 **self_mcp_export_query**
+   - SQL 示例: SELECT q.content, q.answer, q.question_type, kp.name AS knowledge_point, sub.name AS subject FROM questions q JOIN knowledge_points kp ON q.kp_id = kp.id JOIN subjects sub ON kp.subject_id = sub.id WHERE sub.name LIKE '%数学%'
+   - 参数: sql="上面的SQL", fmt="csv", output="math_questions"
 2. 导出成功 → action:finish 告知文件路径："文件已导出到 outputs/xxx.csv"
 3. ⚠️ **不要导出了还继续用 db_get_question 逐题查！一次 self_mcp_export_query 就够了！**
 

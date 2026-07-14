@@ -36,22 +36,26 @@ EDU_AGENT_SYSTEM_PROMPT = """\
 # 工作原则
 - 先查数据库了解情况，再给出建议
 - 简单查询用 db_* 工具，复杂查询用 self_mcp_complex_query
-- 讲解知识时先调用 external_skill_feynman_tutor 激活费曼模式，然后立即回答
+- **讲解任何知识点或概念时，必须先调用 external_skill_feynman_tutor 激活费曼教学模式，然后立即回答**
 - 练习时先调用 external_skill_sigma 激活精熟模式，然后立即回答
+- **学生要求制定学习计划（如"7天计划""复习计划"）时，必须调用 skill_study_plan_skill 生成计划，不要只查学科就提问**
 - 生成报告用 skill_learning_report_skill / skill_mistake_analysis_skill
-- 制定计划用 skill_study_plan_skill
 - 当数据库找不到答案时，用 external_search 联网搜索，搜到后再回答
 
 # 题库兜底策略（重要）
 1. 学生提问后，先用 db_search_questions 查本地题库
 2. 如果本地查不到结果（count=0），必须先调用 external_search 联网搜索，搜到后再用费曼法讲解
 3. 不要在搜索之前就先调 external_skill_feynman_tutor！
-4. 搜索返回后，调用 external_skill_feynman_tutor 激活教学风格，然后 action:finish
-5. 如果有必要，用 self_mcp_batch_insert 把新知识写入知识库
+4. 搜索返回后，调用 external_skill_feynman_tutor 激活教学风格，然后 action:finish 回答
+5. **回答完成后，必须调用 db_save_new_knowledge 将新知识点和题目存入本地数据库**，下次就能直接命中
+6. 入库时用 db_list_subjects 查对应学科ID（初中/高中等），按学科归类保存
+7. 如果 external_search 也失败了（retry_exhausted=true），用你自己的知识回答，然后同样必须调用 db_save_new_knowledge 入库
 
 # 重要规则
 - 调用 external_skill_* 后，只需输出一次 action:finish 即可
-- 不要在 action:finish 之后再调用任何工具
+- 不要在 action:finish 之后再调用任何工具（db_save_new_knowledge 除外）
+- **回答任何本地题库中没有的问题后，必须在 action:finish 之前调用 db_save_new_knowledge 入库，绝不跳过**
+- 调用 db_save_new_knowledge 前先通过 db_list_subjects 确认正确的 subject_id
 - 回答要口语化、有温度，像真人老师
 
 # 输出格式
@@ -71,15 +75,21 @@ class UnifiedAgent:
     registry: ToolRegistry
     requirements: OrderedDict
 
-    def run(self, task: str, max_steps: int = 15, on_answer_chunk=None, on_tool=None) -> dict:
+    def run(self, task: str, max_steps: int = 15, on_answer_chunk=None, on_tool=None, history: list[dict[str, str]] | None = None) -> dict:
         self._already_injected = set()
         catalog = self.registry.catalog()
         current_date = date.today().isoformat()
         messages = [
             {"role": "system", "content": EDU_AGENT_SYSTEM_PROMPT.format(current_date=current_date)},
             {"role": "system", "content": f"# 可用工具\n\n{catalog}"},
-            {"role": "user", "content": f"# 任务\n\n{task}"},
         ]
+        if history:
+            recent_history = history[-20:]
+            messages.append({"role": "system", "content": (
+                "# 对话历史\n以下是之前的对话记录，请结合上下文理解用户当前输入（如'1''对''继续'等简略回复）。"
+            )})
+            messages.extend(recent_history)
+        messages.append({"role": "user", "content": f"# 任务\n\n{task}"})
         trace: list[Observation] = []
 
         for _step in range(1, max_steps + 1):
@@ -120,8 +130,11 @@ class UnifiedAgent:
                         self._already_injected.add(action["tool_name"])
                         messages.append({"role": "user", "content": (
                             f"{skill_name} 模式已激活，教学风格已切换。\n"
-                            f"你现在应该输出 action:finish 直接回答用户的原始问题：{task}\n"
-                            f"记住：回答中要展示费曼教学风格（生活类比、零术语、ASCII图解）。"
+                            f"请按顺序操作：\n"
+                            f"1. 先调用 db_save_new_knowledge 将新知识点和题目存入本地数据库（用 db_list_subjects 找到对应学科ID）\n"
+                            f"2. 然后 action:finish 用费曼风格回答用户的原始问题：{task}\n"
+                            f"记住：回答中要展示费曼教学风格（生活类比、零术语、ASCII图解）。\n"
+                            f"注意：千万不要跳过第1步，必须先把知识入库！"
                         )})
                         continue
 

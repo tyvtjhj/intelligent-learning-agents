@@ -1,0 +1,9 @@
+# 模板：错题批量导入 CSV
+# 保存为 .csv 文件放到 imports/mistakes/ 目录，然后用小宋的"批量导入题库"功能上传
+# 必填列: kp_name, question_type, content, answer
+# 选填列: options, explanation, difficulty, tags
+# question_type可选: choice / fill / true_false / short_answer / essay
+# difficulty可选: easy / medium / hard (默认 medium)
+kp_name,question_type,content,answer,options,explanation,difficulty,tags
+"分数加减法","fill","1/2 + 1/3 = ?","5/6",,先通分再相加,medium,分数
+"牛顿第一定律","choice","以下哪个是牛顿第一定律的表述？","A. 物体在不受外力时保持静止或匀速直线运动","A. 物体在不受外力时保持静止或匀速直线运动|B. F=ma|C. 作用力与反作用力大小相等|D. 动量守恒","也叫惯性定律,easy,物理

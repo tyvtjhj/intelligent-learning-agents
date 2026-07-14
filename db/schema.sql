@@ -101,3 +101,14 @@ CREATE TABLE IF NOT EXISTS study_reports (
     session_id INTEGER REFERENCES study_sessions(id),
     generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS conversation_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL DEFAULT 'default',
+    seq INTEGER NOT NULL DEFAULT 0,
+    role TEXT CHECK(role IN ('user', 'assistant')) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_conv_session ON conversation_messages(session_id, seq);

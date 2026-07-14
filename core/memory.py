@@ -34,3 +34,14 @@ class Memory:
 
     def snapshot(self) -> dict:
         return {"message_count": len(self.messages), "last_role": self.messages[-1]["role"] if self.messages else None}
+
+    def save_to_db(self, session_id: str = "default") -> dict:
+        from tools.db_tools import db_save_conversation
+        return db_save_conversation(session_id, self.messages)
+
+    def load_from_db(self, session_id: str = "default") -> None:
+        from tools.db_tools import db_load_conversation
+        result = db_load_conversation(session_id)
+        if result["ok"] and result["count"] > 0:
+            self.messages = result["messages"]
+        return result

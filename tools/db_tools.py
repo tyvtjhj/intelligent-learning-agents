@@ -18,6 +18,8 @@ def db_list_subjects() -> dict:
         return {"ok": False, "error": str(e)}
 
 
+
+
 def db_list_knowledge_points(subject_id: int) -> dict:
     try:
         conn = get_db_connection()
@@ -137,5 +139,59 @@ def db_get_recent_sessions(limit: int = 5) -> dict:
             for r in rows
         ]
         return {"ok": True, "sessions": sessions, "count": len(sessions)}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def db_save_new_knowledge(subject_id: int, kp_name: str, description: str = "", question_content: str = "", question_answer: str = "", question_explanation: str = "", question_type: str = "short_answer", difficulty: str = "medium") -> dict:
+    """一键保存新知识点+题目到数据库。回答非题库问题后必须调用此工具入库，下次就能直接命中本地题库。"""
+    try:
+        conn = get_db_connection()
+        conn.execute("INSERT INTO knowledge_points (subject_id, name, description, difficulty) VALUES (?, ?, ?, ?)",
+                     (subject_id, kp_name.strip(), description.strip(), difficulty))
+        kp_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+        qid = None
+        if question_content.strip():
+            conn.execute(
+                "INSERT INTO questions (kp_id, question_type, content, answer, explanation, difficulty, source) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (kp_id, question_type, question_content.strip(), question_answer.strip(), question_explanation.strip(), difficulty, "agent_auto"),
+            )
+            qid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+        conn.commit()
+        result = {"ok": True, "kp_id": kp_id, "kp_name": kp_name.strip(), "question_id": qid, "msg": f"知识点'{kp_name}'已入库"}
+        if qid:
+            result["msg"] += f"，含题目 #{qid}"
+        return result
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+def db_save_conversation(session_id: str = "default", messages: list[dict] | None = None) -> dict:
+    try:
+        if not messages:
+            return {"ok": True, "msg": "无消息需保存"}
+        conn = get_db_connection()
+        conn.execute("DELETE FROM conversation_messages WHERE session_id = ?", (session_id,))
+        for seq, m in enumerate(messages):
+            conn.execute(
+                "INSERT INTO conversation_messages (session_id, seq, role, content) VALUES (?, ?, ?, ?)",
+                (session_id, seq, m.get("role", "user"), m.get("content", "")),
+            )
+        conn.commit()
+        return {"ok": True, "msg": f"保存了 {len(messages)} 条对话记录(session={session_id})"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def db_load_conversation(session_id: str = "default") -> dict:
+    try:
+        conn = get_db_connection()
+        rows = conn.execute(
+            "SELECT role, content FROM conversation_messages WHERE session_id = ? ORDER BY seq",
+            (session_id,),
+        ).fetchall()
+        messages = [{"role": r[0], "content": r[1]} for r in rows]
+        return {"ok": True, "messages": messages, "count": len(messages)}
     except Exception as e:
         return {"ok": False, "error": str(e)}

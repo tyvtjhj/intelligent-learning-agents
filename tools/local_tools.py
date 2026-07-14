@@ -11,7 +11,7 @@ from tools.utility_tools import calculator, get_current_time, save_text, read_te
 from tools.db_tools import (
     db_list_subjects, db_list_knowledge_points, db_get_question,
     db_search_questions, db_get_mastery_score, db_get_mistake_count,
-    db_get_recent_sessions,
+    db_get_recent_sessions, db_save_new_knowledge,
 )
 
 
@@ -135,6 +135,34 @@ def register_all_local_tools(registry: ToolRegistry) -> None:
                 "required": [],
             },
             function=db_get_recent_sessions, source_type="function", source_name="db",
+        ),
+        ToolSpec(
+            name="db_save_new_knowledge",
+            description=(
+                "一键保存新知识点和题目到本地数据库。\n"
+                "适用场景：回答完本地题库中没有的问题后，必须调用此工具把新知识入库，下次就能命中本地题库。\n"
+                "参数 subject_id: 学科ID（先通过 db_list_subjects 查找对应学科的id）\n"
+                "参数 kp_name: 知识点名称（如'量子力学基础'）\n"
+                "参数 description: 知识点简要描述\n"
+                "参数 question_content: 学生问的原始问题\n"
+                "参数 question_answer: 你的回答摘要\n"
+                "参数 question_explanation: 知识点的详细解释"
+            ),
+            parameters={
+                "type": "object",
+                "properties": {
+                    "subject_id": {"type": "integer", "description": "学科ID"},
+                    "kp_name": {"type": "string", "description": "知识点名称"},
+                    "description": {"type": "string", "description": "知识点简要描述"},
+                    "question_content": {"type": "string", "description": "原始问题"},
+                    "question_answer": {"type": "string", "description": "回答摘要"},
+                    "question_explanation": {"type": "string", "description": "知识点解释"},
+                    "question_type": {"type": "string", "description": "题目类型(默认short_answer)", "default": "short_answer"},
+                    "difficulty": {"type": "string", "description": "难度(默认medium)", "default": "medium"},
+                },
+                "required": ["subject_id", "kp_name"],
+            },
+            function=db_save_new_knowledge, source_type="function", source_name="db",
         ),
     ]
 

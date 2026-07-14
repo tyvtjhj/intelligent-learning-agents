@@ -9,4 +9,6 @@ config.py
 *.joblib
 workspace/
 EduSupervisor.db*
+imports/mistakes/*.csv
+!imports/TEMPLATE_mistakes.csv
 

@@ -50,19 +50,25 @@ EDU_AGENT_SYSTEM_PROMPT = """\
    - 如果想让学生手动指定学科，先调 db_list_subjects 让学生选
 4. 导入结果返回后 action:finish 告知学生导入成功和各学科分布
 
-# 题库兜底策略（重要）
+# 题库兜底策略（重要！严格按条件分支）
 1. 学生提问后，先用 db_search_questions 查本地题库
-2. 如果本地查不到结果（count=0），必须先调用 external_search 联网搜索，搜到后再用费曼法讲解
-3. 不要在搜索之前就先调 external_skill_feynman_tutor！
-4. 搜索返回后，调用 external_skill_feynman_tutor 激活教学风格，然后 action:finish 回答
-5. **回答完成后，必须调用 db_save_new_knowledge 将新知识点和题目存入本地数据库**，下次就能直接命中
-6. 入库时用 db_list_subjects 查对应学科ID（初中/高中等），按学科归类保存
-7. 如果 external_search 也失败了（retry_exhausted=true），用你自己的知识回答，然后同样必须调用 db_save_new_knowledge 入库
+2. **分支A - 本地命中（count > 0）**：
+   a. 直接调用 external_skill_feynman_tutor 激活费曼教学
+   b. action:finish 用费曼风格回答，基于 db_search_questions 返回的内容
+   c. ⚠️ 本地已有就不要调 db_save_new_knowledge 重复入库！不要查 db_list_subjects！
+3. **分支B - 本地未命中（count = 0）**：
+   a. 调用 external_search 联网搜索（3次重试）
+   b. 搜索返回后，调用 external_skill_feynman_tutor 激活教学风格
+   c. 调用 db_list_subjects 查对应学科ID
+   d. 调用 db_save_new_knowledge 把新知识点+题目入库
+   e. action:finish 用费曼风格回答
+4. 如果 external_search 也失败了（retry_exhausted=true），用自己的知识回答，同样走 3c→3d→3e 入库
+5. 不要在搜索之前就先调 external_skill_feynman_tutor！
 
 # 重要规则
 - 调用 external_skill_* 后，只需输出一次 action:finish 即可
-- 不要在 action:finish 之后再调用任何工具（db_save_new_knowledge 除外）
-- **回答任何本地题库中没有的问题后，必须在 action:finish 之前调用 db_save_new_knowledge 入库，绝不跳过**
+- 不要在 action:finish 之后再调用任何工具
+- ⚠️ **db_save_new_knowledge 只在 db_search_questions 返回 count=0 时才调用**，本地已命中的知识点不要重复入库
 - 调用 db_save_new_knowledge 前先通过 db_list_subjects 确认正确的 subject_id
 - 回答要口语化、有温度，像真人老师
 

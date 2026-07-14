@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+.idea/
+.vscode/
+config.py
+.env
+*.joblib
+workspace/
+EduSupervisor.db

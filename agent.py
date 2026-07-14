@@ -11,7 +11,7 @@ from core.agent import UnifiedAgent
 from core.adapters.skill_adapter import SkillAdapter
 from core.adapters.mcp_adapter import MCPAdapter
 from tools.local_tools import register_all_local_tools
-from db.connection import set_db_path, init_db as _init_db
+from db.connection import set_db_path
 
 
 def main():
@@ -73,11 +73,20 @@ def main():
                 print(agent._requirements_status())
                 continue
 
-            result = agent.run(task)
-            print(f"\n{result['answer']}")
+            def on_answer(text):
+                print(text, end="", flush=True)
+
+            def on_tool(name, reason):
+                print(f"\n  🔧 {name}", end="", flush=True)
+                if reason:
+                    print(f": {reason}", end="", flush=True)
+
+            result = agent.run(task, on_answer_chunk=on_answer, on_tool=on_tool)
+            if not any(result["requirements"].values()):
+                print()
             done = sum(1 for v in result["requirements"].values() if v)
             total = len(result["requirements"])
-            print(f"[{result['steps']}步 | 验收: {done}/{total}]")
+            print(f"\n[{result['steps']}步 | 验收: {done}/{total}]")
     except KeyboardInterrupt:
         print("\n再见!")
     finally:

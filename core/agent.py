@@ -51,7 +51,7 @@ class UnifiedAgent:
     registry: ToolRegistry
     requirements: OrderedDict
 
-    def run(self, task: str, max_steps: int = 15) -> dict:
+    def run(self, task: str, max_steps: int = 15, on_answer_chunk=None, on_tool=None) -> dict:
         catalog = self.registry.catalog()
         current_date = date.today().isoformat()
         messages = [
@@ -63,28 +63,27 @@ class UnifiedAgent:
 
         for _step in range(1, max_steps + 1):
             try:
-                resp = self.client.chat.completions.create(
-                    model=self.model_name,
-                    messages=messages,
-                    temperature=0.3,
-                    max_tokens=1024,
-                )
-                content = resp.choices[0].message.content.strip()
+                content = self._stream_collect(messages, on_answer_chunk)
+
                 if content.startswith("```json"):
                     content = content.replace("```json", "").replace("```", "").strip()
                 elif content.startswith("```"):
                     content = content.replace("```", "").strip()
 
                 action = json.loads(content)
+                act = action.get("action", "")
 
-                if action.get("action") == "finish":
+                if act == "finish":
+                    self._stream_answer(action.get("answer", ""), on_answer_chunk)
                     return {
                         "ok": True, "answer": action["answer"],
                         "steps": _step, "trace": trace,
                         "requirements": dict(self.requirements),
                     }
 
-                if action.get("action") == "tool_call":
+                if act == "tool_call":
+                    if on_tool:
+                        on_tool(action["tool_name"], action.get("reason", ""))
                     obs = self.registry.execute(
                         action["tool_name"], action.get("arguments", {})
                     )
@@ -109,6 +108,24 @@ class UnifiedAgent:
             "steps": max_steps, "trace": trace,
             "requirements": dict(self.requirements),
         }
+
+    def _stream_collect(self, messages, on_chunk) -> str:
+        buffer = ""
+        stream = self.client.chat.completions.create(
+            model=self.model_name,
+            messages=messages,
+            temperature=0.3,
+            max_tokens=1024,
+            stream=True,
+        )
+        for chunk in stream:
+            delta = chunk.choices[0].delta.content or ""
+            buffer += delta
+        return buffer
+
+    def _stream_answer(self, answer: str, on_chunk) -> None:
+        if on_chunk:
+            on_chunk(answer)
 
     def _requirements_status(self) -> str:
         lines = ["# 验收进度"]

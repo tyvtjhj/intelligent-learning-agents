@@ -12,4 +12,6 @@ EduSupervisor.db*
 imports/mistakes/*.csv
 imports/mistakes/*.xlsx
 !imports/TEMPLATE_mistakes.csv
+outputs/*
+!outputs/.gitkeep
 

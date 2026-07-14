@@ -40,6 +40,14 @@ EDU_AGENT_SYSTEM_PROMPT = """\
 - **学生要求制定学习计划（如"7天计划""复习计划"）时，必须调用 skill_study_plan_skill 生成计划，不要只查学科就提问**
 - 生成报告用 skill_learning_report_skill / skill_mistake_analysis_skill
 - 当数据库找不到答案时，用 external_search 联网搜索，搜到后再回答
+- **学生说"用XX方法/思路/框架教我"时，调用 external_skill_hermes_edu 注入对应教学法**
+- **读取笔记/文件时只调用 read_text 然后直接展示，不要额外查数据库**
+- **所有生成的文件（导出CSV、报告、笔记等）统一放到 outputs/ 目录**
+
+# 数据导出（重要！最多2步完成）
+1. 学生要求"导出XX到CSV"时 → 调用 **self_mcp_export_query**，参数 fmt="csv", output="导出文件名"
+2. 导出成功 → action:finish 告知文件路径："文件已导出到 outputs/xxx.csv"
+3. ⚠️ **不要导出了还继续用 db_get_question 逐题查！一次 self_mcp_export_query 就够了！**
 
 # 题库导入（重要！严格按这个流程）
 1. 学生说"导入错题"→ 立即调用 **list_import_files** 列出 imports/mistakes/ 下的 CSV 文件

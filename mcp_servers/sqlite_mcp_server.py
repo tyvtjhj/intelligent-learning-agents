@@ -1,9 +1,12 @@
+import csv
+import io
 import json
 import sqlite3
 import sys
 from pathlib import Path
 
 DB_PATH = None
+PROJECT_ROOT = Path(__file__).parent.parent
 
 ALLOWED_READ_TABLES = [
     "subjects", "knowledge_points", "questions", "question_tags",
@@ -66,13 +69,30 @@ def self_mcp_batch_insert(table: str, rows_json: str) -> str:
     return json.dumps(result, ensure_ascii=False)
 
 
-def self_mcp_export_query(sql: str, fmt: str = "json") -> str:
+def self_mcp_export_query(sql: str, fmt: str = "json", output: str = "") -> str:
+    "导出SQL查询结果，格式 json/csv。output 参数指定 outputs/ 下的文件名时写入本地文件。"
     _safe_sql(sql, write=False)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     try:
         rows = [dict(r) for r in conn.execute(sql).fetchall()]
-        result = {"ok": True, "rows": rows, "count": len(rows), "format": fmt}
+        if fmt == "csv" and rows:
+            buf = io.StringIO()
+            writer = csv.DictWriter(buf, fieldnames=list(rows[0].keys()))
+            writer.writeheader()
+            writer.writerows(rows)
+            csv_content = buf.getvalue()
+            filepath = ""
+            if output:
+                out_dir = PROJECT_ROOT / "outputs"
+                out_dir.mkdir(parents=True, exist_ok=True)
+                filename = output if output.endswith(".csv") else f"{output}.csv"
+                file_path = out_dir / filename
+                file_path.write_text(csv_content, encoding="utf-8-sig")
+                filepath = str(file_path.relative_to(PROJECT_ROOT))
+            result = {"ok": True, "count": len(rows), "format": fmt, "file": filepath}
+        else:
+            result = {"ok": True, "rows": rows, "count": len(rows), "format": fmt}
     except Exception as e:
         result = {"ok": False, "error": str(e)}
     finally:

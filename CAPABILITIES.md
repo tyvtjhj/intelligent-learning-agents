@@ -116,7 +116,7 @@
 | 6 | `题目 1 的详细信息` | 🔧 `db_get_question` |
 | 7 | `我最近学习情况怎么样` | 🔧 `db_get_recent_sessions` |
 | 8 | `帮我把这段话存一下：今天学了分数加减法` | 🔧 `save_text` |
-| 9 | `读取我保存的笔记` | 🔧 `read_text` |
+| 9 | `读取我保存的笔记` | 🔧 `read_text`（参数名是 filename） → 直接展示内容，不查数据库 |
 | 10 | `导入错题` | 🔧 `list_import_files` → 显示 CSV 文件列表 |
 | 11 | `知识点的掌握度怎么样` | 🔧 `db_get_mastery_score` |
 | 12 | `这个知识点有多少错题` | 🔧 `db_get_mistake_count` |
@@ -134,32 +134,33 @@
 
 | # | 测试语句 | 预期触发 |
 |---|---------|---------|
-| 17 | `什么是光合作用` | 🔧 `db_search_questions` → 📥 `external_skill_feynman_tutor` |
+| 17 | `什么是光合作用` | 🔧 `db_search_questions`(count>0) → 📥 `external_skill_feynman_tutor` |
 | 18 | `给我出几道物理题考考我` | 📥 `external_skill_sigma` |
-| 19 | `用三角函数公式教我` | 📥 `external_skill_hermes_edu`（注入教学方法） |
+| 19 | `用三角函数公式教我` | 🔧 `db_search_questions`(count=0) → 🌐 `external_search` → 📥 `external_skill_feynman_tutor` → 🔧 `db_save_new_knowledge` |
+| 20 | `用人教版数学方法教分数` | 📥 `external_skill_hermes_edu`（教材同步教学方法注入） |
 
 ### 第四部分：自建 MCP 测试（🔌）
 
 | # | 测试语句 | 预期触发 |
 |---|---------|---------|
-| 20 | `初中物理的学习统计数据` | 🔌 `self_mcp_learning_stats` |
-| 21 | `我最薄弱的10个知识点是哪些` | 🔌 `self_mcp_weak_point_ranking` |
-| 22 | `四则运算的掌握度变化趋势` | 🔌 `self_mcp_mastery_trend` |
-| 23 | `用 SQL 查一下所有选择题` | 🔌 `self_mcp_complex_query` |
-| 24 | `导出所有数学题到 CSV` | 🔌 `self_mcp_export_query` |
+| 25 | `初中物理的学习统计数据` | 🔌 `self_mcp_learning_stats` |
+| 26 | `我最薄弱的10个知识点是哪些` | 🔌 `self_mcp_weak_point_ranking` |
+| 27 | `四则运算的掌握度变化趋势` | 🔌 `self_mcp_mastery_trend` |
+| 28 | `用 SQL 查一下所有选择题` | 🔌 `self_mcp_complex_query` |
+| 29 | `导出所有数学题到 CSV，还要告诉我文件位置` | 🔌 `self_mcp_export_query`(fmt="csv", output="math_questions") → "文件已导出到 outputs/math_questions.csv" |
 
 ### 第五部分：外部 MCP 测试（🌐）
 
 | # | 测试语句 | 预期触发 |
 |---|---------|---------|
-| 25 | `什么是量子场论` | 🔧 `db_search_questions`(count=0) → 🌐 `external_search` → 📥 `external_skill_feynman_tutor` → 🔧 `db_save_new_knowledge` |
+| 30 | `什么是量子场论` | 🔧 `db_search_questions`(count=0) → 🌐 `external_search` → 📥 `external_skill_feynman_tutor` → 🔧 `db_save_new_knowledge` |
 
 ### 第六部分：组合场景（综合验收）
 
 | # | 测试语句 | 预期触发 |
 |---|---------|---------|
-| 26 | `导入错题` → 选文件 → 选学科 | 🔧 `list_import_files` → 📦 `skill_question_import_skill` → 返回各学科分布 |
-| 27 | `status` | 验收进度：应显示 ✓ 本地Tool ✓ 自建Skill ✓ 外部Skill ✓ 自建MCP ✓ 外部MCP |
+| 31 | `导入错题` → 选文件 → 选学科 | 🔧 `list_import_files` → 📦 `skill_question_import_skill` → 返回各学科分布 |
+| 32 | `status` | 验收进度：应显示 ✓ 本地Tool ✓ 自建Skill ✓ 外部Skill ✓ 自建MCP ✓ 外部MCP |
 
 ---
 

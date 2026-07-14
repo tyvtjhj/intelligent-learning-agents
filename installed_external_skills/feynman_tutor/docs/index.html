@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feynman Tutor · 费曼式深度教学 Claude 技能</title>
+  <meta name="description" content="一个把『讲清楚一件事』变成可复用方法论的 Claude 技能。零基础起步、每个术语讲透、能画图就画图。" />
+  <meta property="og:title" content="🧠 Feynman Tutor" />
+  <meta property="og:description" content="把『真正搞懂一件事』变成可复用的教学方法 · A Claude Code skill." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== 顶部导航 ===== -->
+  <nav class="nav">
+    <a class="brand" href="#top"><span class="brand-mark">🧠</span> Feynman&nbsp;Tutor</a>
+    <div class="nav-links">
+      <a href="#disciplines">七条纪律</a>
+      <a href="#how">原理</a>
+      <a href="#demo">演示台</a>
+      <a href="#install">安装</a>
+      <a class="nav-cta" href="https://github.com/wangsiyi7/feynman-tutor" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+  </nav>
+
+  <!-- ===== Hero ===== -->
+  <header id="top" class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-inner">
+      <div class="badges">
+        <span class="badge badge-purple">Claude Skill</span>
+        <span class="badge">MIT</span>
+        <span class="badge">中文</span>
+        <span class="badge badge-green">v1.0 · active</span>
+      </div>
+      <h1>把「真正搞懂一件事」<br/>变成一套可复用的方法</h1>
+      <p class="lede">
+        Feynman Tutor 是一个 Claude Code 技能。启用后，Claude 讲解任何概念时都会切换成
+        <b>零基础起步、每个术语当场讲透、能画图就画图</b> 的费曼式人格——
+        因为你要的不是「知道名词」，而是「在脑子里建出一台能自己运转的模型」。
+      </p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#install">⚡ 立即安装</a>
+        <a class="btn btn-ghost" href="https://github.com/wangsiyi7/feynman-tutor" target="_blank" rel="noopener">⭐ Star on GitHub</a>
+        <a class="btn btn-ghost" href="#demo">▶ 看它怎么教</a>
+      </div>
+
+      <!-- 终端式预览 -->
+      <div class="terminal" aria-hidden="true">
+        <div class="terminal-bar"><i></i><i></i><i></i><span>claude — feynman-tutor</span></div>
+        <pre class="terminal-body"><span class="t-dim">&gt;</span> <span class="t-user">帮我理解一下 DNS 到底是怎么回事，我基础为零</span>
+
+<span class="t-accent">🧠 Feynman Tutor</span>
+<span class="t-dim">DNS</span>，全称 <span class="t-em">Domain Name System</span>，直译「域名系统」。
+费曼一下：它就是 <b>互联网的电话簿</b> 📒 —— 你只记得住
+google.com 这种名字，但机器之间靠数字地址找彼此……
+
+  📱 "google.com 地址多少?"
+     │
+     ▼ 先问路由器(它常兼任小电话簿)
+  🛜 "我没存…去问运营商的大电话簿"
+     │
+     ▼  ──一路接力问到权威源──▶  答案传回 📱
+</pre>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== 七条纪律 ===== -->
+  <section id="disciplines" class="section">
+    <div class="section-head">
+      <span class="kicker">THE METHOD</span>
+      <h2>七条教学纪律</h2>
+      <p>每条都附带「为什么这样做」，让 Claude 理解意图、灵活发挥，而不是死记规则。</p>
+    </div>
+    <div class="grid grid-7">
+      <article class="card"><div class="card-ic">🧩</div><h3>1 · 费曼化</h3><p>先给生活类比和画面，再回到术语，不甩干巴巴的定义。</p></article>
+      <article class="card"><div class="card-ic">🔤</div><h3>2 · 零英文裸词</h3><p>任何英文/简写首次出现，当场给「全称 → 直译 → 大白话」。</p></article>
+      <article class="card"><div class="card-ic">📒</div><h3>3 · 术语账本</h3><p>维护一张「已声明清单」，新词标 🆕，讲过的不重复。</p></article>
+      <article class="card"><div class="card-ic">🗺️</div><h3>4 · 概念云 + 连线</h3><p>先给一张概念地图看全貌，再逐块填肉。</p></article>
+      <article class="card"><div class="card-ic">🟦</div><h3>5 · 像素图</h3><p>用 ASCII 字符把抽象机制画出来，看比读快。</p></article>
+      <article class="card"><div class="card-ic">🎚️</div><h3>6 · 动态节奏</h3><p>零基础起步，但在舒适圈之上垫一点；讲透但不灌水。</p></article>
+      <article class="card"><div class="card-ic">🧭</div><h3>7 · 结尾给菜单</h3><p>列出 3~4 个深钻方向，把方向盘交给你的好奇心。</p></article>
+    </div>
+  </section>
+
+  <!-- ===== 原理 ===== -->
+  <section id="how" class="section section-alt">
+    <div class="section-head">
+      <span class="kicker">PHILOSOPHY</span>
+      <h2>知道名词 ≠ 真正理解</h2>
+      <p>人脑靠「挂钩」记东西。孤立的定义没有挂钩，记不住；一个好类比能让陌生概念挂到已有经验上。</p>
+    </div>
+    <pre class="flowchart">            ┌─────────────────────────────────────────┐
+            │   知道名词   ≠   真正理解                  │
+            └─────────────────────┬───────────────────┘
+                                  │
+        ┌─────────────────────────┼─────────────────────────┐
+        ▼                         ▼                         ▼
+   ┌─────────┐             ┌─────────┐             ┌─────────┐
+   │ 生活类比 │   ──────▶   │ 像素图   │   ──────▶   │ 术语账本 │
+   │ 挂钩经验 │             │ 看见机制 │             │ 累积掌控 │
+   └─────────┘             └─────────┘             └─────────┘
+        └─────────────────────────┼─────────────────────────┘
+                                  ▼
+                      ┌───────────────────────┐
+                      │   脑中可运转的模型     │
+                      └───────────────────────┘</pre>
+  </section>
+
+  <!-- ===== 交互演示台 ===== -->
+  <section id="demo" class="section">
+    <div class="section-head">
+      <span class="kicker">TRY IT</span>
+      <h2>费曼演示台</h2>
+      <p>点一个概念，看看启用本技能后 Claude 会怎么讲它——类比、像素图、术语账本一次到位。</p>
+    </div>
+    <div class="demo">
+      <div class="demo-picker" id="demoPicker">
+        <button class="chip is-active" data-key="dns">DNS 域名系统</button>
+        <button class="chip" data-key="fourier">傅里叶变换</button>
+        <button class="chip" data-key="compound">复利</button>
+        <button class="chip" data-key="backprop">神经网络反向传播</button>
+      </div>
+      <div class="demo-stage">
+        <div class="demo-q"><span class="t-dim">&gt;</span> <span id="demoQ" class="t-user"></span></div>
+        <div class="demo-analogy" id="demoAnalogy"></div>
+        <pre class="demo-art" id="demoArt"></pre>
+        <div class="demo-ledger">
+          <div class="demo-ledger-title">📒 术语账本（本次新增）</div>
+          <table><tbody id="demoLedger"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 安装 ===== -->
+  <section id="install" class="section section-alt">
+    <div class="section-head">
+      <span class="kicker">GET STARTED</span>
+      <h2>30 秒安装</h2>
+      <p>技能就是一个放进 <code>~/.claude/skills/</code> 的文件夹，克隆即用。</p>
+    </div>
+    <div class="install-grid">
+      <div class="codecard">
+        <div class="codecard-head"><span>macOS / Linux</span><button class="copy" data-copy="git clone https://github.com/wangsiyi7/feynman-tutor.git ~/.claude/skills/feynman-tutor">复制</button></div>
+        <pre>git clone https://github.com/wangsiyi7/feynman-tutor.git \
+  ~/.claude/skills/feynman-tutor</pre>
+      </div>
+      <div class="codecard">
+        <div class="codecard-head"><span>Windows (PowerShell)</span><button class="copy" data-copy='git clone https://github.com/wangsiyi7/feynman-tutor.git &quot;$env:USERPROFILE\.claude\skills\feynman-tutor&quot;'>复制</button></div>
+        <pre>git clone https://github.com/wangsiyi7/feynman-tutor.git `
+  "$env:USERPROFILE\.claude\skills\feynman-tutor"</pre>
+      </div>
+    </div>
+    <div class="usage">
+      <h4>然后这样用</h4>
+      <ul>
+        <li><b>自动触发</b> —— 说出「想真正搞懂」的意图：<i>「帮我理解 TCP 拥塞控制的原理」</i></li>
+        <li><b>手动触发</b> —— 直接调用：<code>/feynman-tutor</code></li>
+        <li><b>会自动放过</b> —— 快速命令、修 bug、单词翻译、要「一句话」结论时，不啰嗦。</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== 页脚 ===== -->
+  <footer class="footer">
+    <div class="footer-quote">用费曼的方式学习：如果你不能把它讲简单，说明你还没真懂它。</div>
+    <div class="footer-links">
+      <a href="https://github.com/wangsiyi7/feynman-tutor" target="_blank" rel="noopener">GitHub 仓库</a>
+      <a href="https://github.com/wangsiyi7/feynman-tutor/blob/main/SKILL.md" target="_blank" rel="noopener">SKILL.md</a>
+      <a href="https://github.com/wangsiyi7/feynman-tutor/blob/main/docs/example-session.md" target="_blank" rel="noopener">教学示例</a>
+      <a href="https://github.com/wangsiyi7/feynman-tutor/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">参与贡献</a>
+    </div>
+    <div class="footer-meta">MIT © 2026 wangsiyi7 · Built for Claude Code</div>
+  </footer>
+
+  <div class="toast" id="toast">已复制 ✓</div>
+  <script src="script.js"></script>
+</body>
+</html>

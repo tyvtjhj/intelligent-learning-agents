@@ -1,0 +1,77 @@
+{
+  "name": "hermes-edu-skills",
+  "version": "0.15.0",
+  "private": false,
+  "description": "面向中国教育场景的开源 Agent Skill Pack：教材同步、备考复习、拍照答疑、错题复盘、亲子陪学、阅读写作和教师工具，Hermes Agent 可直接使用，也可导出到 OpenClaw、Codex、Cursor、Claude Code 等 AI 工具。 China-focused education Agent Skill Pack for Hermes Agent and other AI tools.",
+  "license": "MIT",
+  "type": "module",
+  "homepage": "https://github.com/zhongweiv/hermes-edu-skills#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhongweiv/hermes-edu-skills.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zhongweiv/hermes-edu-skills/issues"
+  },
+  "bin": {
+    "hermes-edu": "./scripts/agent-pack.mjs",
+    "hermes-edu-skills": "./scripts/agent-pack.mjs"
+  },
+  "keywords": [
+    "hermes-agent",
+    "hermes",
+    "agent",
+    "ai-agent",
+    "skills",
+    "skill-pack",
+    "agent-skills",
+    "openclaw",
+    "education",
+    "learning",
+    "teaching",
+    "teacher-tools",
+    "ai-education",
+    "k12",
+    "edtech",
+    "china-education",
+    "shineway",
+    "教育",
+    "学习",
+    "教学",
+    "智能体",
+    "教育智能体",
+    "ai教育",
+    "学习助手"
+  ],
+  "scripts": {
+    "agent": "node scripts/agent-pack.mjs",
+    "agent:convert": "node scripts/agent-pack.mjs convert",
+    "agent:install": "node scripts/agent-pack.mjs install",
+    "export:agents": "node scripts/agent-pack.mjs export",
+    "export:claude": "node scripts/agent-pack.mjs convert --tool claude-code",
+    "export:codex": "node scripts/agent-pack.mjs convert --tool codex",
+    "export:cursor": "node scripts/agent-pack.mjs convert --tool cursor --target ./dist/cursor-rules",
+    "export:generic": "node scripts/agent-pack.mjs convert --tool generic-agent",
+    "export:openclaw": "node scripts/agent-pack.mjs convert --tool openclaw",
+    "install:claude": "node scripts/agent-pack.mjs install --tool claude-code",
+    "install:codex": "node scripts/agent-pack.mjs install --tool codex",
+    "install:cursor": "node scripts/agent-pack.mjs install --tool cursor",
+    "install:generic": "node scripts/agent-pack.mjs install --tool generic-agent",
+    "install:hermes": "node scripts/agent-pack.mjs install-hermes",
+    "install:openclaw": "node scripts/agent-pack.mjs install-openclaw",
+    "validate": "node scripts/validate.mjs"
+  },
+  "files": [
+    "skills",
+    "scripts",
+    "catalog.json",
+    ".well-known/skills/index.json",
+    "README.md",
+    "README.en.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "RELEASE.md",
+    "SECURITY.md"
+  ]
+}

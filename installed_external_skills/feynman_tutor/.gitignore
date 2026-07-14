@@ -1,0 +1,19 @@
+# OS / 系统垃圾
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*~
+
+# 临时 / 解包产物
+_extract/
+*.tmp
+*.log
+
+# 本地评测产物（触发优化时生成）
+*-workspace/
+evals/results/

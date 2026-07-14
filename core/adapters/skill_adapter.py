@@ -121,18 +121,61 @@ class SkillAdapter:
         if not external_dir.exists():
             return
         for skill_dir in external_dir.iterdir():
-            if skill_dir.is_dir():
-                skill_md = skill_dir / "SKILL.md"
-                if not skill_md.exists():
-                    continue
-                try:
-                    content = skill_md.read_text(encoding="utf-8")
-                    self._audit_external_skill(skill_dir.name, content)
-                    spec = self._make_external_spec(skill_dir.name, content)
-                    if spec:
-                        self.external_specs.append(spec)
-                except PermissionError as e:
-                    print(f"[SECURITY] 外部 Skill 审查未通过: {skill_dir.name}, {e}")
+            if not skill_dir.is_dir() or skill_dir.name.startswith("."):
+                continue
+
+            skill_md = skill_dir / "SKILL.md"
+            catalog_json = skill_dir / "catalog.json"
+
+            if skill_md.exists():
+                self._load_single_external(skill_dir, skill_md)
+            elif catalog_json.exists():
+                self._load_catalog_external(skill_dir, catalog_json)
+
+    def _load_single_external(self, skill_dir: Path, skill_md: Path) -> None:
+        try:
+            content = skill_md.read_text(encoding="utf-8")
+            self._audit_external_skill(skill_dir.name, content)
+            spec = self._make_external_spec(skill_dir.name, content)
+            if spec:
+                self.external_specs.append(spec)
+        except PermissionError as e:
+            print(f"[SECURITY] 外部 Skill 审查未通过: {skill_dir.name}, {e}")
+
+    def _load_catalog_external(self, skill_dir: Path, catalog_path: Path) -> None:
+        import json
+        try:
+            catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return
+
+        pack_name = skill_dir.name
+
+        def _catalog_handler(**kwargs: dict) -> dict:
+            return {
+                "ok": True,
+                "mode": "external_skill_pack",
+                "pack_name": pack_name,
+                "catalog": {k: v for k, v in catalog.items() if k != "skills"},
+                "context": kwargs,
+            }
+
+        desc_lines = [f"外部 Skill Pack: {pack_name}"]
+        for cat in catalog.get("categories", []):
+            cat_name = cat.get("name", "")
+            skill_count = len(cat.get("skills", []))
+            desc_lines.append(f"  - {cat_name}: {skill_count} 个 Skill")
+        desc = "\n".join(desc_lines)
+
+        spec = ToolSpec(
+            name=f"external_skill_{pack_name}",
+            description=desc,
+            parameters={"type": "object", "properties": {}, "required": []},
+            function=_catalog_handler,
+            source_type="skill",
+            source_name=f"external_{pack_name}",
+        )
+        self.external_specs.append(spec)
 
     def _audit_external_skill(self, name: str, content: str) -> None:
         issues = []

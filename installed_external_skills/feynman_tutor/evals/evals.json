@@ -1,0 +1,26 @@
+{
+  "skill_name": "feynman-tutor",
+  "description": "触发评测集:验证『该触发深度教学时触发、不该触发时放过』。should_trigger=true 期望启用费曼教学模式;false 期望放过(快速答案/执行任务/翻译等)。",
+  "evals": [
+    { "id": 1,  "should_trigger": true,  "prompt": "帮我理解一下 Docker 的命名空间到底是怎么把进程隔离开的" },
+    { "id": 2,  "should_trigger": true,  "prompt": "讲讲 TCP 拥塞控制的原理,我想真正搞懂不是背概念" },
+    { "id": 3,  "should_trigger": true,  "prompt": "区块链的共识机制底层到底是怎么回事,费曼化给我拆一下" },
+    { "id": 4,  "should_trigger": true,  "prompt": "我数学一直很烂,能不能假设我啥也不懂,从零帮我理解傅里叶变换" },
+    { "id": 5,  "should_trigger": true,  "prompt": "诶这个 HTTPS 到底凭啥就安全了,我一直没想明白" },
+    { "id": 6,  "should_trigger": true,  "prompt": "期权定价那个 BS 模型我完全看不懂,能掰开揉碎讲讲吗" },
+    { "id": 7,  "should_trigger": true,  "prompt": "为什么天是蓝的,我想要那种刨根问底的解释别糊弄我" },
+    { "id": 8,  "should_trigger": true,  "prompt": "帮我搞懂神经网络的反向传播是怎么回事,我基础为零" },
+    { "id": 9,  "should_trigger": true,  "prompt": "比特币挖矿到底在算什么,我想从最底层理解它" },
+    { "id": 10, "should_trigger": true,  "prompt": "上次你讲的那个分层,能再深入讲一下传输层吗" },
+    { "id": 11, "should_trigger": false, "prompt": "git rebase 把分支合上去的命令具体咋敲" },
+    { "id": 12, "should_trigger": false, "prompt": "帮我把这段 Python 报错修一下,贴在下面了" },
+    { "id": 13, "should_trigger": false, "prompt": "帮我把家里的旁路由透明代理配置起来" },
+    { "id": 14, "should_trigger": false, "prompt": "用一句话告诉我 RAM 和 ROM 的区别就行" },
+    { "id": 15, "should_trigger": false, "prompt": "把我刚才讲网络的内容整理进我的 WPS 笔记" },
+    { "id": 16, "should_trigger": false, "prompt": "帮我写个快速排序函数,Python 的" },
+    { "id": 17, "should_trigger": false, "prompt": "throughput 这个英文词中文是啥意思" },
+    { "id": 18, "should_trigger": false, "prompt": "DNS 地址填 114 还是 8.8.8.8 好" },
+    { "id": 19, "should_trigger": false, "prompt": "帮我查下最新 iPhone 多少钱" },
+    { "id": 20, "should_trigger": false, "prompt": "把这篇讲量子力学的文章总结成三点" }
+  ]
+}

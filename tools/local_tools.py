@@ -72,8 +72,8 @@ def register_all_local_tools(registry: ToolRegistry) -> None:
         ToolSpec(
             name="list_import_files",
             description=(
-                "列出 imports/mistakes/ 目录下的所有 CSV 错题文件。\n"
-                "适用场景：学生说要导入错题时，先用此工具列出可选文件，让用户确认后再调用 skill_question_import_skill 导入。\n"
+                "列出 imports/mistakes/ 目录下的所有 CSV 题库文件。\n"
+                "适用场景：学生说要导入题库时，先用此工具列出可选文件，让用户确认后再调用 skill_question_import_skill 导入。\n"
                 "返回 files 数组和 count。"
             ),
             parameters={"type": "object", "properties": {}, "required": []},
@@ -159,9 +159,10 @@ def register_all_local_tools(registry: ToolRegistry) -> None:
                 "参数 subject_id: 学科ID（先通过 db_list_subjects 查找对应学科的id）\n"
                 "参数 kp_name: 知识点名称（如'量子力学基础'）\n"
                 "参数 description: 知识点简要描述\n"
-                "参数 question_content: 学生问的原始问题\n"
-                "参数 question_answer: 你的回答摘要\n"
-                "参数 question_explanation: 知识点的详细解释"
+                "参数 question_content: 学生问的原始问题或出题内容\n"
+                "参数 question_answer: 正确答案（如'C'或'7'）\n"
+                "参数 question_explanation: 知识点的详细解释\n"
+                "返回: ok, kp_id, kp_name, question_id（用于后续写 mistake_log）"
             ),
             parameters={
                 "type": "object",

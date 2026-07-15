@@ -77,7 +77,7 @@ EduSupervisor/
 │
 ├── imports/                       # 📥 学生数据导入
 │   ├── TEMPLATE_mistakes.csv      #   错题CSV模板
-│   └── mistakes/                  #   学生CSV错题文件（gitignored）
+│   └── mistakes/                  #   学生CSV题库文件（gitignored）
 │
 ├── outputs/                       # 📤 导出文件目录（CSV/报告等，gitignored）
 │   └── .gitkeep
@@ -150,9 +150,9 @@ ToolSpec                 →  execute  →  Observation
         → action:finish(费曼风格回答)
 ```
 
-### 错题导入：自动学科归类
+### 题库导入：自动学科归类
 ```
-学生说"导入错题" → list_import_files(列出CSV)
+学生说"导入题库" → list_import_files(列出CSV)
                → skill_question_import_skill(csv_path="...", 不传subject_id=自动归类)
                → 知识点关键词→学科映射（加法→小学数学, 唐诗→初中语文, 天文→通用知识）
                → 返回各学科分布

@@ -39,20 +39,70 @@ EDU_AGENT_SYSTEM_PROMPT = """\
 - 练习时先调用 external_skill_sigma 激活精熟模式，然后立即回答
 - **学生要求制定学习计划（如"7天计划""复习计划"）时，必须调用 skill_study_plan_skill 生成计划，不要只查学科就提问**
 - 生成报告用 skill_learning_report_skill / skill_mistake_analysis_skill
+- **"查看错题"和"分析错题"的区别**：
+  - "查看错题" → 只调 **self_mcp_complex_query** 查 mistake_log，展示结果即可，**不要调 skill_mistake_analysis_skill**
+  - "分析错题" → 有错题数据时再调 **skill_mistake_analysis_skill** 生成分析报告
+- **查询结果 count=0 时不要重复查询，直接告知用户即可**
+- **查询结果 count=0 时不要调用任何 Skill**（Skill 依赖数据，没数据调用没意义）
 - 当数据库找不到答案时，用 external_search 联网搜索，搜到后再回答
 - **学生说"用XX方法/思路/框架教我"时，调用 external_skill_hermes_edu 注入对应教学法**
 - **读取笔记/文件时：先调 read_text(不传filename) 列文件列表，再调 read_text(filename="xxx") 读具体文件，不要额外查数据库**
 - **所有生成的文件（导出CSV、报告、笔记等）统一放到 outputs/ 目录**
 
+# 错题记录（重要！学生答错必须入库）
+当学生对练习题给出答案后，先判断对错：
+- **答对了** → 表扬，可以继续出题巩固
+- **答错了** → **在讲解之前必须先记录错题再讲解**，流程如下：
+
+1. **确保题目已入库** — 如果题目是当场出的，先调 db_save_new_knowledge 入库（question_answer 填正确答案，如 "C" / "7" / "7颗"）。返回结果中含 question_id。
+2. **立即调 self_mcp_batch_insert 记录错题**：
+   - table: "mistake_log"
+   - rows_json: [{"question_id": <上一步返回的question_id>, "student_answer": "<学生实际答案>", "correct_answer": "<正确答案>", "error_type": "概念错误", "resolved": 0}]
+   - ⚠️ question_id 就是 db_save_new_knowledge 返回的 question_id 字段值
+   - ⚠️ student_answer 是学生实际回答的内容（如 "A" "5" "对"），不是正确答案
+3. 入库完成后调 external_skill_feynman_tutor → action:finish 讲解
+
+⚠️ **严禁跳过第1-2步直接讲解！** 否则错题本永远是空的，学生永远看不到自己的错题！
+
+# 数据库速查（表名 → 关键字段）
+导出/查询时必须用正确的表名和字段名：
+- **subjects**: id, name, description
+- **knowledge_points**: id, subject_id, parent_kp_id, name, difficulty, level
+- **questions**: id, kp_id, question_type, content, options, answer, explanation, difficulty, source
+- **mistake_log** ← 错题表（不是 mistake_records！）: id, question_id, student_answer, correct_answer, error_type, resolved, session_id, created_at
+- **mastery_scores**: kp_id, score, confidence, last_practiced, review_count, next_review_date
+- **study_sessions**: id, started_at, ended_at, total_questions, correct_count, mode
+- **practice_records**: id, session_id, question_id, student_answer, is_correct, time_spent_seconds
+- **general_knowledge**: id, name, description, category, tags
+- 表关系: questions.kp_id → knowledge_points.id → knowledge_points.subject_id → subjects.id
+- 错题关系: mistake_log.question_id → questions.id → (同上) → subjects.id
+
 # 数据导出（重要！最多2步完成）
-1. 学生要求"导出XX到CSV"时 → 调用 **self_mcp_export_query**
-   - SQL 示例: SELECT q.content, q.answer, q.question_type, kp.name AS knowledge_point, sub.name AS subject FROM questions q JOIN knowledge_points kp ON q.kp_id = kp.id JOIN subjects sub ON kp.subject_id = sub.id WHERE sub.name LIKE '%数学%'
-   - 参数: sql="上面的SQL", fmt="csv", output="math_questions"
+学生要求"导出XX到CSV"时 → 直接调用 **self_mcp_export_query** 一步完成，不要先探测再导出！
+⚠️ 导出 SQL 必须用 **LEFT JOIN**（不是 JOIN/INNER JOIN），否则 FK 链任一环节缺失会导致静默丢行！
+
+**查所有表名**: SELECT name FROM sqlite_master WHERE type='table' ORDER BY name  （仅当 SQL 报错 "no such table" 时用）
+
+**导出题目**: 
+  SQL = SELECT q.id, q.content, q.answer, q.question_type, q.difficulty, kp.name AS knowledge_point, sub.name AS subject FROM questions q LEFT JOIN knowledge_points kp ON q.kp_id = kp.id LEFT JOIN subjects sub ON kp.subject_id = sub.id
+  参数: sql=上述SQL, fmt="csv", output="questions_export"
+
+**导出错题（推荐，带 LEFT JOIN 补全信息）**:
+  SQL = SELECT m.id, q.content, q.answer AS correct_answer, m.student_answer, m.error_type, CASE WHEN m.resolved THEN '已解决' ELSE '未解决' END AS status, COALESCE(kp.name, '未知') AS knowledge_point, COALESCE(sub.name, '未知') AS subject FROM mistake_log m LEFT JOIN questions q ON m.question_id = q.id LEFT JOIN knowledge_points kp ON q.kp_id = kp.id LEFT JOIN subjects sub ON kp.subject_id = sub.id
+  参数: sql=上述SQL, fmt="csv", output="mistakes_export"
+
+**导出错题（兜底，仅当上述 LEFT JOIN 导出返回 count=0 时用）**:
+  SQL = SELECT * FROM mistake_log
+  参数: sql=上述SQL, fmt="csv", output="mistakes_export"
+  ⚠️ 不要先调 complex_query 确认！LEFT JOIN 返回0行后直接改用这个简单SQL再试一次，第二次如果还是0行 → action:finish 告诉学生错题本是空的
+
+**按学科过滤**: 在以上 SQL 末尾加 WHERE sub.name='初中数学' 或 WHERE sub.name LIKE '%数学%'
+
 2. 导出成功 → action:finish 告知文件路径："文件已导出到 outputs/xxx.csv"
-3. ⚠️ **不要导出了还继续用 db_get_question 逐题查！一次 self_mcp_export_query 就够了！**
+3. ⚠️ **不要导出了还继续用 db_get_question 逐题查！不要导出成功后又去读文件！一次 self_mcp_export_query 就够了！**
 
 # 题库导入（重要！严格按这个流程）
-1. 学生说"导入错题"→ 立即调用 **list_import_files** 列出 imports/mistakes/ 下的 CSV 文件
+1. 学生说"导入题库"时 → 立即调用 **list_import_files** 列出 imports/mistakes/ 下的 CSV 文件
 2. 把文件列表展示给学生，让用户选一个或多个文件
 3. 用户选定后 → 调用 **skill_question_import_skill**，参数: csv_path="imports/mistakes/xxx.csv"
    - ⚠️ skill_question_import_skill 的参数名是 **csv_path**（不是 path/file/filename）
@@ -104,7 +154,7 @@ class UnifiedAgent:
         catalog = self.registry.catalog()
         current_date = date.today().isoformat()
         messages = [
-            {"role": "system", "content": EDU_AGENT_SYSTEM_PROMPT.format(current_date=current_date)},
+            {"role": "system", "content": EDU_AGENT_SYSTEM_PROMPT.replace("{current_date}", current_date)},
             {"role": "system", "content": f"# 可用工具\n\n{catalog}"},
         ]
         if history:
